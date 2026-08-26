@@ -1,0 +1,15 @@
+{
+  "name": "sagittarius-learning-nav",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "射手座学习导航 · VitePress 文档站点",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

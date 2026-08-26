@@ -13,12 +13,12 @@
   <div class="archer-symbol top-left">♐</div>
 
   <nav class="navbar">
-    <div class="logo" onclick="location.href='/'">
+    <div class="logo" onclick="location.href='/index.html'">
       <span class="icon">♐</span>
       <span>Sagittarius Nav</span>
     </div>
     <div class="nav-right">
-      <a href="/register" class="btn btn-ghost btn-sm">注册</a>
+      <a href="/register.html" class="btn btn-ghost btn-sm">注册</a>
     </div>
   </nav>
 
@@ -47,7 +47,7 @@
       </form>
 
       <div class="auth-footer">
-        还没有账号？<a href="/register">立即注册</a><br>
+        还没有账号？<a href="/register.html">立即注册</a><br>
         <small style="color:var(--text-dim);margin-top:.5rem;display:inline-block;">
           演示账号: admin / admin123
         </small>
@@ -60,7 +60,7 @@
     initStarfield();
 
     // TODO: 假登录（暂未接入后端）——直接写本地 token 并跳转，不做实际校验
-    if (API.getToken()) redirect('/portal');
+    if (API.getToken()) redirect('/portal.html.html');
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -73,7 +73,7 @@
       // TODO: 假登录（暂未接入后端）——不调用接口，任意输入直接通过
       API.setToken('fake-token-for-demo');
       showToast('登录成功，正在进入门户...', 'success');
-      setTimeout(() => redirect('/portal'), 800);
+      setTimeout(() => redirect('/portal.html.html'), 800);
     });
   </script>
 </body>

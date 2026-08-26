@@ -12,13 +12,13 @@
   <div class="starfield" id="starfield"></div>
 
   <nav class="navbar">
-    <div class="logo" onclick="location.href='/'">
+    <div class="logo" onclick="location.href='/index.html'">
       <span class="icon">♐</span>
       <span>Sagittarius Nav</span>
     </div>
     <div class="nav-right">
-      <a href="/portal" class="btn btn-ghost btn-sm"><i class="fas fa-compass"></i> 门户</a>
-      <a href="/" class="btn btn-ghost btn-sm" onclick="logout();return false;"><i class="fas fa-arrow-right-from-bracket"></i> 退出</a>
+      <a href="/portal.html.html" class="btn btn-ghost btn-sm"><i class="fas fa-compass"></i> 门户</a>
+      <a href="/index.html" class="btn btn-ghost btn-sm" onclick="logout();return false;"><i class="fas fa-arrow-right-from-bracket"></i> 退出</a>
     </div>
   </nav>
 
@@ -66,10 +66,10 @@
 
     async function init() {
       const user = await API.getMe();
-      if (!user) { redirect('/login'); return; }
+      if (!user) { redirect('/login.html'); return; }
       if (user.role !== 'admin') {
         showToast('无管理员权限', 'error');
-        setTimeout(() => redirect('/portal'), 1500);
+        setTimeout(() => redirect('/portal.html.html'), 1500);
         return;
       }
       await loadData();
@@ -78,9 +78,9 @@
 
     async function loadData() {
       const [docData, catData, userData] = await Promise.all([
-        API.get('/admin/documents'),
-        API.get('/admin/categories'),
-        API.get('/admin/users')
+        API.get('/admin.html.html/documents'),
+        API.get('/admin.html.html/categories'),
+        API.get('/admin.html.html/users')
       ]);
       allDocuments = docData.documents;
       allCategories = catData.categories;
@@ -230,7 +230,7 @@
             <h2 style="font-family:var(--font-display);color:var(--star-white);font-size:1.5rem;">
               ${docId ? '编辑文档' : '新建文档'}
             </h2>
-            <a href="/portal" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> 返回</a>
+            <a href="/portal.html.html" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> 返回</a>
           </div>
           <div class="form-row">
             <label>标题 *</label>
@@ -326,7 +326,7 @@
           await API.put(`/admin/documents/${docId}`, data);
           showToast('文档已更新', 'success');
         } else {
-          await API.post('/admin/documents', data);
+          await API.post('/admin.html.html/documents', data);
           showToast('文档已创建', 'success');
         }
         await loadData();
@@ -484,7 +484,7 @@
         if (id && id !== 'null') {
           await API.put(`/admin/subcategories/${id}`, data);
         } else {
-          await API.post('/admin/subcategories', data);
+          await API.post('/admin.html.html/subcategories', data);
         }
         showToast('二级分类已保存', 'success');
         document.getElementById('modalContainer').innerHTML = '';
@@ -566,7 +566,7 @@
         if (id && id !== 'null') {
           await API.put(`/admin/categories/${id}`, data);
         } else {
-          await API.post('/admin/categories', data);
+          await API.post('/admin.html.html/categories', data);
         }
         showToast('分类已保存', 'success');
         document.getElementById('modalContainer').innerHTML = '';

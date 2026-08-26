@@ -12,12 +12,12 @@
   <div class="starfield" id="starfield"></div>
 
   <nav class="navbar">
-    <div class="logo" onclick="location.href='/'">
+    <div class="logo" onclick="location.href='/index.html'">
       <span class="icon">♐</span>
       <span>Sagittarius Nav</span>
     </div>
     <ul class="nav-links">
-      <li><a href="/portal">学习门户</a></li>
+      <li><a href="/portal.html.html">学习门户</a></li>
     </ul>
     <div class="nav-right" id="navRight"></div>
   </nav>
@@ -33,22 +33,22 @@
 
     async function init() {
       const user = await API.getMe();
-      if (!user) { redirect('/login'); return; }
+      if (!user) { redirect('/login.html'); return; }
 
       document.getElementById('navRight').innerHTML = `
         <span style="color:var(--text-muted);font-size:.85rem;"><i class="fas fa-user-astronaut"></i> ${user.username}</span>
-        ${user.role === 'admin' ? `<a href="/admin" class="btn btn-ghost btn-sm"><i class="fas fa-gear"></i> 管理</a>` : ''}
+        ${user.role === 'admin' ? `<a href="/admin.html" class="btn btn-ghost btn-sm"><i class="fas fa-gear"></i> 管理</a>` : ''}
       `;
 
       const docId = getQueryParam('id');
-      if (!docId) { redirect('/portal'); return; }
+      if (!docId) { redirect('/portal.html.html'); return; }
 
       try {
         const data = await API.get(`/content/documents/${docId}`);
         renderDoc(data.document);
       } catch (err) {
         showToast(err.message, 'error');
-        setTimeout(() => redirect('/portal'), 1500);
+        setTimeout(() => redirect('/portal.html.html'), 1500);
       }
     }
 
@@ -59,12 +59,12 @@
       document.getElementById('docPage').innerHTML = `
         <div class="doc-detail-header">
           <div class="breadcrumb">
-            <a href="/portal">学习门户</a>
+            <a href="/portal.html.html">学习门户</a>
             <i class="fas fa-chevron-right" style="font-size:.65rem;margin:0 .4rem;"></i>
-            <a href="/portal?category=${escapeHtml(doc.category_slug || '')}">${escapeHtml(doc.category_name || '')}</a>
+            <a href="/portal.html.html?category=${escapeHtml(doc.category_slug || '')}">${escapeHtml(doc.category_name || '')}</a>
             ${doc.subcategory_slug ? `
             <i class="fas fa-chevron-right" style="font-size:.65rem;margin:0 .4rem;"></i>
-            <a href="/portal?category=${escapeHtml(doc.category_slug || '')}&subcategory=${escapeHtml(doc.subcategory_slug)}">${escapeHtml(doc.subcategory_name)}</a>` : ''}
+            <a href="/portal.html.html?category=${escapeHtml(doc.category_slug || '')}&subcategory=${escapeHtml(doc.subcategory_slug)}">${escapeHtml(doc.subcategory_name)}</a>` : ''}
             <i class="fas fa-chevron-right" style="font-size:.65rem;margin:0 .4rem;"></i>
             <span>${escapeHtml(doc.title)}</span>
           </div>
@@ -81,7 +81,7 @@
           ${marked.parse(doc.content || '*暂无内容*')}
         </div>
         <div style="text-align:center;margin-top:2rem;">
-          <a href="/portal" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> 返回门户</a>
+          <a href="/portal.html.html" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> 返回门户</a>
         </div>
       `;
     }

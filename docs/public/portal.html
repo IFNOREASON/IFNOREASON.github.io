@@ -13,12 +13,12 @@
 
   <!-- 导航栏 -->
   <nav class="navbar" id="navbar">
-    <div class="logo" onclick="location.href='/'">
+    <div class="logo" onclick="location.href='/index.html'">
       <span class="icon">♐</span>
       <span>Sagittarius Nav</span>
     </div>
     <ul class="nav-links">
-      <li><a href="/portal" class="active">学习门户</a></li>
+      <li><a href="/portal.html.html" class="active">学习门户</a></li>
       <li><a href="#" onclick="logout();return false;" style="cursor:pointer">退出</a></li>
     </ul>
     <div class="nav-right" id="navRight"></div>
@@ -74,11 +74,11 @@
 
     async function init() {
       const user = await API.getMe();
-      if (!user) { redirect('/login'); return; }
+      if (!user) { redirect('/login.html'); return; }
 
       document.getElementById('navRight').innerHTML = `
         <span style="color:var(--text-muted);font-size:.85rem;"><i class="fas fa-user-astronaut"></i> ${user.username}</span>
-        ${user.role === 'admin' ? `<a href="/admin" class="btn btn-ghost btn-sm"><i class="fas fa-gear"></i> 管理</a>` : ''}
+        ${user.role === 'admin' ? `<a href="/admin.html" class="btn btn-ghost btn-sm"><i class="fas fa-gear"></i> 管理</a>` : ''}
       `;
 
       try {
@@ -358,7 +358,7 @@
         if (activeSubcategory) params.set('subcategory', activeSubcategory);
       }
       const qs = params.toString();
-      history.replaceState(null, '', qs ? `/portal?${qs}` : '/portal');
+      history.replaceState(null, '', qs ? `/portal?${qs}` : '/portal.html.html');
     }
 
     function renderSubcategories() {
@@ -419,7 +419,7 @@
         const tags = (doc.tags || '').split(',').filter(Boolean).slice(0, 4)
           .map(t => `<span class="doc-tag">${escapeHtml(t.trim())}</span>`).join('');
         return `
-          <div class="doc-card" onclick="location.href='/document?id=${doc.id}'">
+          <div class="doc-card" onclick="location.href='/document.html?id=${doc.id}'">
             <div class="doc-cat-badge">
               <i class="${doc.category_icon || 'fas fa-folder'}"></i>
               ${escapeHtml(doc.category_name || '未分类')}
