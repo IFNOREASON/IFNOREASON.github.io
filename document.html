@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文档详情 · 射手座导航</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♐</text></svg>">
+</head>
+<body>
+  <div class="starfield" id="starfield"></div>
+
+  <nav class="navbar">
+    <div class="logo" onclick="location.href='/'">
+      <span class="icon">♐</span>
+      <span>Sagittarius Nav</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="/portal">学习门户</a></li>
+    </ul>
+    <div class="nav-right" id="navRight"></div>
+  </nav>
+
+  <div class="doc-detail-page" id="docPage">
+    <div class="loading-spinner"><div class="spinner"></div></div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    initStarfield();
+
+    async function init() {
+      const user = await API.getMe();
+      if (!user) { redirect('/login'); return; }
+
+      document.getElementById('navRight').innerHTML = `
+        <span style="color:var(--text-muted);font-size:.85rem;"><i class="fas fa-user-astronaut"></i> ${user.username}</span>
+        ${user.role === 'admin' ? `<a href="/admin" class="btn btn-ghost btn-sm"><i class="fas fa-gear"></i> 管理</a>` : ''}
+      `;
+
+      const docId = getQueryParam('id');
+      if (!docId) { redirect('/portal'); return; }
+
+      try {
+        const data = await API.get(`/content/documents/${docId}`);
+        renderDoc(data.document);
+      } catch (err) {
+        showToast(err.message, 'error');
+        setTimeout(() => redirect('/portal'), 1500);
+      }
+    }
+
+    function renderDoc(doc) {
+      const tags = (doc.tags || '').split(',').filter(Boolean)
+        .map(t => `<span class="doc-tag">${escapeHtml(t.trim())}</span>`).join('');
+
+      document.getElementById('docPage').innerHTML = `
+        <div class="doc-detail-header">
+          <div class="breadcrumb">
+            <a href="/portal">学习门户</a>
+            <i class="fas fa-chevron-right" style="font-size:.65rem;margin:0 .4rem;"></i>
+            <a href="/portal?category=${escapeHtml(doc.category_slug || '')}">${escapeHtml(doc.category_name || '')}</a>
+            ${doc.subcategory_slug ? `
+            <i class="fas fa-chevron-right" style="font-size:.65rem;margin:0 .4rem;"></i>
+            <a href="/portal?category=${escapeHtml(doc.category_slug || '')}&subcategory=${escapeHtml(doc.subcategory_slug)}">${escapeHtml(doc.subcategory_name)}</a>` : ''}
+            <i class="fas fa-chevron-right" style="font-size:.65rem;margin:0 .4rem;"></i>
+            <span>${escapeHtml(doc.title)}</span>
+          </div>
+          <h1>${escapeHtml(doc.title)}</h1>
+          <div class="doc-info">
+            <span><i class="far fa-eye"></i> ${doc.views} 次浏览</span>
+            <span><i class="far fa-clock"></i> ${formatDate(doc.created_at)}</span>
+            ${doc.url ? `<a href="${escapeHtml(doc.url)}" target="_blank" style="color:var(--accent-gold);">
+              <i class="fas fa-arrow-up-right-from-square"></i> 访问原文</a>` : ''}
+          </div>
+          ${tags ? `<div class="doc-tags">${tags}</div>` : ''}
+        </div>
+        <div class="doc-detail-content">
+          ${marked.parse(doc.content || '*暂无内容*')}
+        </div>
+        <div style="text-align:center;margin-top:2rem;">
+          <a href="/portal" class="btn btn-ghost"><i class="fas fa-arrow-left"></i> 返回门户</a>
+        </div>
+      `;
+    }
+
+    init();
+  </script>
+</body>
+</html>

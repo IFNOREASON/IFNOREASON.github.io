@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 · 射手座学习导航</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♐</text></svg>">
+</head>
+<body>
+  <div class="starfield" id="starfield"></div>
+  <div class="archer-symbol bottom-right">♐</div>
+
+  <nav class="navbar">
+    <div class="logo" onclick="location.href='/'">
+      <span class="icon">♐</span>
+      <span>Sagittarius Nav</span>
+    </div>
+    <div class="nav-right">
+      <a href="/login" class="btn btn-ghost btn-sm">登录</a>
+    </div>
+  </nav>
+
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-icon">♐</div>
+        <h1>搭弓射箭，启程探索</h1>
+        <p>注册账号，开启你的编程星辰之旅</p>
+      </div>
+
+      <div class="auth-error" id="errorBox"></div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="username" placeholder="2-20 个字符" required>
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="email" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="password" placeholder="至少 6 位" required>
+        </div>
+        <div class="form-group">
+          <label>确认密码</label>
+          <input type="password" id="password2" placeholder="再次输入密码" required>
+        </div>
+        <button type="submit" class="btn btn-gold" style="width:100%;font-size:1rem;padding:.8rem;">
+          <i class="fas fa-bullseye"></i> 注册并开始探索
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        已有账号？<a href="/login">直接登录</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    initStarfield();
+
+    // 已登录则跳转
+    (async () => {
+      const user = await API.getMe();
+      if (user) redirect('/portal');
+    })();
+
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById('errorBox');
+      errBox.classList.remove('show');
+
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const password2 = document.getElementById('password2').value;
+
+      if (password !== password2) {
+        errBox.textContent = '两次密码输入不一致';
+        errBox.classList.add('show');
+        return;
+      }
+
+      try {
+        const data = await API.post('/auth/register', { username, email, password });
+        API.setToken(data.token);
+        showToast('注册成功！欢迎加入探索之旅', 'success');
+        setTimeout(() => redirect('/portal'), 800);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.classList.add('show');
+      }
+    });
+  </script>
+</body>
+</html>

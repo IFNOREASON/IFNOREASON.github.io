@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 · 射手座导航</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♐</text></svg>">
+</head>
+<body>
+  <div class="starfield" id="starfield"></div>
+
+  <nav class="navbar">
+    <div class="logo" onclick="location.href='/'">
+      <span class="icon">♐</span>
+      <span>Sagittarius Nav</span>
+    </div>
+    <div class="nav-right">
+      <a href="/portal" class="btn btn-ghost btn-sm"><i class="fas fa-compass"></i> 门户</a>
+      <a href="/" class="btn btn-ghost btn-sm" onclick="logout();return false;"><i class="fas fa-arrow-right-from-bracket"></i> 退出</a>
+    </div>
+  </nav>
+
+  <div class="admin-layout">
+    <!-- 侧边栏 -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header"><i class="fas fa-gear"></i> 管理控制台</div>
+      <ul class="sidebar-nav">
+        <li class="active" data-view="dashboard" onclick="switchView('dashboard')">
+          <i class="fas fa-chart-pie"></i> 概览
+        </li>
+        <li data-view="documents" onclick="switchView('documents')">
+          <i class="fas fa-file-lines"></i> 文档管理
+        </li>
+        <li data-view="editor" onclick="switchView('editor')">
+          <i class="fas fa-pen-to-square"></i> 新建文档
+        </li>
+        <li data-view="categories" onclick="switchView('categories')">
+          <i class="fas fa-layer-group"></i> 分类管理
+        </li>
+        <li data-view="users" onclick="switchView('users')">
+          <i class="fas fa-users"></i> 用户列表
+        </li>
+      </ul>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="admin-main" id="adminMain">
+      <div class="loading-spinner"><div class="spinner"></div></div>
+    </main>
+  </div>
+
+  <!-- 模态框容器 -->
+  <div id="modalContainer"></div>
+
+  <script src="/js/common.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    initStarfield();
+
+    let allCategories = [];
+    let allDocuments = [];
+    let allUsers = [];
+    let editingDocId = null;
+
+    async function init() {
+      const user = await API.getMe();
+      if (!user) { redirect('/login'); return; }
+      if (user.role !== 'admin') {
+        showToast('无管理员权限', 'error');
+        setTimeout(() => redirect('/portal'), 1500);
+        return;
+      }
+      await loadData();
+      switchView('dashboard');
+    }
+
+    async function loadData() {
+      const [docData, catData, userData] = await Promise.all([
+        API.get('/admin/documents'),
+        API.get('/admin/categories'),
+        API.get('/admin/users')
+      ]);
+      allDocuments = docData.documents;
+      allCategories = catData.categories;
+      allUsers = userData.users;
+    }
+
+    function switchView(view, docId = null) {
+      // 更新侧边栏
+      document.querySelectorAll('.sidebar-nav li').forEach(li => li.classList.remove('active'));
+      const activeLi = document.querySelector(`.sidebar-nav li[data-view="${view}"]`);
+      if (activeLi) activeLi.classList.add('active');
+
+      editingDocId = docId;
+      const main = document.getElementById('adminMain');
+
+      switch (view) {
+        case 'dashboard': renderDashboard(); break;
+        case 'documents': renderDocuments(); break;
+        case 'editor': renderEditor(docId); break;
+        case 'categories': renderCategories(); break;
+        case 'users': renderUsers(); break;
+      }
+    }
+
+    /* ===== 概览 ===== */
+    function renderDashboard() {
+      const published = allDocuments.filter(d => d.status === 'published').length;
+      const drafts = allDocuments.filter(d => d.status === 'draft').length;
+      const totalViews = allDocuments.reduce((s, d) => s + (d.views || 0), 0);
+
+      document.getElementById('adminMain').innerHTML = `
+        <div class="admin-header"><h2>概览</h2></div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-file-lines"></i></div>
+            <div class="stat-value">${allDocuments.length}</div>
+            <div class="stat-label">文档总数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-value">${published}</div>
+            <div class="stat-label">已发布</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-pen-ruler"></i></div>
+            <div class="stat-value">${drafts}</div>
+            <div class="stat-label">草稿</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-value">${allCategories.length}</div>
+            <div class="stat-label">分类数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-value">${allUsers.length}</div>
+            <div class="stat-label">注册用户</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-eye"></i></div>
+            <div class="stat-value">${totalViews}</div>
+            <div class="stat-label">总浏览量</div>
+          </div>
+        </div>
+        <div class="admin-header" style="margin-top:1rem;">
+          <h2>最近文档</h2>
+          <button class="btn btn-gold btn-sm" onclick="switchView('editor')">
+            <i class="fas fa-plus"></i> 新建文档
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead><tr>
+            <th>标题</th><th>分类</th><th>状态</th><th>浏览</th><th>更新时间</th>
+          </tr></thead>
+          <tbody>
+            ${allDocuments.slice(0, 8).map(d => `
+              <tr style="cursor:pointer" onclick="switchView('editor', ${d.id})">
+                <td>${escapeHtml(d.title)}</td>
+                <td>${escapeHtml(d.category_name || '-')}</td>
+                <td><span class="status-badge status-${d.status}">${d.status === 'published' ? '已发布' : '草稿'}</span></td>
+                <td>${d.views || 0}</td>
+                <td>${formatDate(d.updated_at)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    /* ===== 文档管理 ===== */
+    function renderDocuments() {
+      document.getElementById('adminMain').innerHTML = `
+        <div class="admin-header">
+          <h2>文档管理</h2>
+          <button class="btn btn-gold btn-sm" onclick="switchView('editor')">
+            <i class="fas fa-plus"></i> 新建文档
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead><tr>
+            <th>标题</th><th>分类</th><th>状态</th><th>浏览</th><th>更新时间</th><th>操作</th>
+          </tr></thead>
+          <tbody>
+            ${allDocuments.map(d => `
+              <tr>
+                <td>${escapeHtml(d.title)}</td>
+                <td>${escapeHtml(d.category_name || '-')}${d.subcategory_name ? `<br><span style="font-size:.72rem;color:var(--accent-fire);">↳ ${escapeHtml(d.subcategory_name)}</span>` : ''}</td>
+                <td><span class="status-badge status-${d.status}">${d.status === 'published' ? '已发布' : '草稿'}</span></td>
+                <td>${d.views || 0}</td>
+                <td>${formatDate(d.updated_at)}</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" onclick="switchView('editor', ${d.id})">
+                    <i class="fas fa-pen"></i> 编辑
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteDoc(${d.id}, '${escapeHtml(d.title)}')">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    /* ===== 文档编辑器 ===== */
+    function renderEditor(docId) {
+      const doc = docId ? allDocuments.find(d => d.id === docId) : null;
+      const title = doc ? doc.title : '';
+      const description = doc ? doc.description : '';
+      const content = doc ? doc.content : '';
+      const url = doc ? doc.url : '';
+      const categoryId = doc ? doc.category_id : '';
+      const subcategoryId = doc ? doc.subcategory_id : '';
+      const tags = doc ? doc.tags : '';
+      const status = doc ? doc.status : 'draft';
+
+      const catOptions = allCategories.map(c =>
+        `<option value="${c.id}" ${c.id === categoryId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+      ).join('');
+
+      const subOptions = buildSubOptions(categoryId, subcategoryId);
+
+      document.getElementById('adminMain').innerHTML = `
+        <div class="doc-editor">
+          <div class="editor-header">
+            <h2 style="font-family:var(--font-display);color:var(--star-white);font-size:1.5rem;">
+              ${docId ? '编辑文档' : '新建文档'}
+            </h2>
+            <a href="/portal" class="btn btn-ghost btn-sm"><i class="fas fa-arrow-left"></i> 返回</a>
+          </div>
+          <div class="form-row">
+            <label>标题 *</label>
+            <input type="text" id="edt-title" value="${escapeHtml(title)}" placeholder="文档标题">
+          </div>
+          <div class="form-row">
+            <label>描述</label>
+            <textarea id="edt-description" placeholder="简短描述文档内容">${escapeHtml(description)}</textarea>
+          </div>
+          <div class="form-row-2">
+            <div class="form-row">
+              <label>分类</label>
+              <select id="edt-category" onchange="onCategoryChange()">
+                <option value="">未分类</option>
+                ${catOptions}
+              </select>
+            </div>
+            <div class="form-row">
+              <label>二级分类</label>
+              <select id="edt-subcategory">
+                <option value="">无二级分类</option>
+                ${subOptions}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>标签 (逗号分隔)</label>
+            <input type="text" id="edt-tags" value="${escapeHtml(tags)}" placeholder="JavaScript, 进阶, 教程">
+          </div>
+          <div class="form-row">
+            <label>外链 URL (可选)</label>
+            <input type="text" id="edt-url" value="${escapeHtml(url)}" placeholder="https://...">
+          </div>
+          <div class="form-row">
+            <label>内容 (支持 Markdown)</label>
+            <textarea id="edt-content" class="content-editor" placeholder="## 标题&#10;&#10;在这里编写文档内容...">${escapeHtml(content)}</textarea>
+          </div>
+          <div class="form-row">
+            <label>状态</label>
+            <select id="edt-status">
+              <option value="draft" ${status === 'draft' ? 'selected' : ''}>草稿</option>
+              <option value="published" ${status === 'published' ? 'selected' : ''}>发布</option>
+            </select>
+          </div>
+          <div class="editor-actions">
+            <button class="btn btn-gold" onclick="saveDoc(${docId || 'null'})">
+              <i class="fas fa-save"></i> 保存
+            </button>
+            <button class="btn btn-ghost" onclick="previewDoc()">
+              <i class="fas fa-eye"></i> 预览
+            </button>
+            ${docId ? `<button class="btn btn-danger" onclick="deleteDoc(${docId}, '${escapeHtml(title)}')">
+              <i class="fas fa-trash"></i> 删除
+            </button>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    /* 生成二级分类下拉选项 */
+    function buildSubOptions(categoryId, selectedSubId) {
+      const cat = allCategories.find(c => c.id == categoryId);
+      if (!cat || !cat.subcategories || cat.subcategories.length === 0) return '';
+      return cat.subcategories.map(s =>
+        `<option value="${s.id}" ${s.id == selectedSubId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`
+      ).join('');
+    }
+
+    /* 切换分类时联动刷新二级分类 */
+    function onCategoryChange() {
+      const categoryId = document.getElementById('edt-category').value;
+      const subSelect = document.getElementById('edt-subcategory');
+      subSelect.innerHTML = `<option value="">无二级分类</option>${buildSubOptions(categoryId, null)}`;
+    }
+
+    async function saveDoc(docId) {
+      const title = document.getElementById('edt-title').value.trim();
+      if (!title) { showToast('标题不能为空', 'error'); return; }
+
+      const data = {
+        title,
+        description: document.getElementById('edt-description').value.trim(),
+        content: document.getElementById('edt-content').value,
+        url: document.getElementById('edt-url').value.trim(),
+        category_id: document.getElementById('edt-category').value || null,
+        subcategory_id: document.getElementById('edt-subcategory').value || null,
+        tags: document.getElementById('edt-tags').value.trim(),
+        status: document.getElementById('edt-status').value,
+      };
+
+      try {
+        if (docId && docId !== 'null') {
+          await API.put(`/admin/documents/${docId}`, data);
+          showToast('文档已更新', 'success');
+        } else {
+          await API.post('/admin/documents', data);
+          showToast('文档已创建', 'success');
+        }
+        await loadData();
+        switchView('documents');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function previewDoc() {
+      const content = document.getElementById('edt-content').value || '*暂无内容*';
+      const title = document.getElementById('edt-title').value || '预览';
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal" style="max-width:760px;">
+            <div class="modal-header">
+              <h3>${escapeHtml(title)}</h3>
+              <button class="modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</button>
+            </div>
+            <div class="modal-body doc-detail-content" style="max-height:60vh;overflow-y:auto;">
+              ${marked.parse(content)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function deleteDoc(id, title) {
+      if (!confirm(`确定删除「${title}」吗？此操作不可撤销。`)) return;
+      try {
+        await API.del(`/admin/documents/${id}`);
+        showToast('文档已删除', 'success');
+        await loadData();
+        switchView('documents');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    /* ===== 分类管理 ===== */
+    function renderCategories() {
+      document.getElementById('adminMain').innerHTML = `
+        <div class="admin-header">
+          <h2>分类管理</h2>
+          <button class="btn btn-gold btn-sm" onclick="showCategoryModal()">
+            <i class="fas fa-plus"></i> 新建分类
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead><tr>
+            <th>名称</th><th>标识</th><th>图标</th><th>二级分类</th><th>排序</th><th>操作</th>
+          </tr></thead>
+          <tbody>
+            ${allCategories.map(c => {
+              const subs = c.subcategories || [];
+              return `
+              <tr>
+                <td><i class="${c.icon}"></i> ${escapeHtml(c.name)}</td>
+                <td>${escapeHtml(c.slug)}</td>
+                <td><code>${escapeHtml(c.icon)}</code></td>
+                <td style="max-width:340px;">
+                  ${subs.length ? `<div style="display:flex;flex-wrap:wrap;gap:.35rem;">
+                    ${subs.map(s => `
+                      <span style="display:inline-flex;align-items:center;gap:.3rem;padding:.15rem .55rem;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:12px;font-size:.72rem;color:var(--primary-light);">
+                        ${escapeHtml(s.name)}
+                        <i class="fas fa-pen" style="cursor:pointer;opacity:.7;" onclick="showSubcategoryModal(${s.id}, ${c.id})" title="编辑"></i>
+                        <i class="fas fa-trash" style="cursor:pointer;opacity:.7;color:#F87171;" onclick="deleteSubcategory(${s.id}, '${escapeHtml(s.name)}')" title="删除"></i>
+                      </span>`).join('')}
+                  </div>` : `<span style="color:var(--text-dim);font-size:.8rem;">暂无</span>`}
+                  <button class="btn btn-ghost btn-sm" style="margin-top:.4rem;padding:.15rem .5rem;font-size:.7rem;" onclick="showSubcategoryModal(null, ${c.id})">
+                    <i class="fas fa-plus"></i> 添加二级分类
+                  </button>
+                </td>
+                <td>${c.sort_order}</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm" onclick="showCategoryModal(${c.id})">
+                    <i class="fas fa-pen"></i>
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteCategory(${c.id}, '${escapeHtml(c.name)}')">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    /* ===== 二级分类弹窗 ===== */
+    function showSubcategoryModal(id = null, parentId = null) {
+      let sub = null;
+      let catId = parentId;
+      if (id) {
+        for (const c of allCategories) {
+          const found = (c.subcategories || []).find(s => s.id === id);
+          if (found) { sub = found; catId = c.id; break; }
+        }
+      }
+
+      const catOptions = allCategories.map(c =>
+        `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+      ).join('');
+
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>${id ? '编辑二级分类' : '新建二级分类'}</h3>
+              <button class="modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">所属主分类</label>
+                <select id="sub-parent" style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+                  ${catOptions}
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">名称</label>
+                <input type="text" id="sub-name" value="${sub ? escapeHtml(sub.name) : ''}" placeholder="如: JavaScript / TS"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">标识 (英文)</label>
+                <input type="text" id="sub-slug" value="${sub ? escapeHtml(sub.slug) : ''}" placeholder="如: js-ts"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+              <div class="form-group">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">排序</label>
+                <input type="number" id="sub-sort" value="${sub ? sub.sort_order : 0}" placeholder="0"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost btn-sm" onclick="this.parentElement.parentElement.parentElement.remove()">取消</button>
+              <button class="btn btn-gold btn-sm" onclick="saveSubcategory(${id || 'null'})">保存</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function saveSubcategory(id) {
+      const data = {
+        name: document.getElementById('sub-name').value.trim(),
+        slug: document.getElementById('sub-slug').value.trim(),
+        category_id: parseInt(document.getElementById('sub-parent').value),
+        sort_order: parseInt(document.getElementById('sub-sort').value) || 0,
+      };
+      if (!data.name || !data.slug) { showToast('名称和标识必填', 'error'); return; }
+
+      try {
+        if (id && id !== 'null') {
+          await API.put(`/admin/subcategories/${id}`, data);
+        } else {
+          await API.post('/admin/subcategories', data);
+        }
+        showToast('二级分类已保存', 'success');
+        document.getElementById('modalContainer').innerHTML = '';
+        await loadData();
+        renderCategories();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function deleteSubcategory(id, name) {
+      if (!confirm(`确定删除二级分类「${name}」吗？`)) return;
+      try {
+        await API.del(`/admin/subcategories/${id}`);
+        showToast('二级分类已删除', 'success');
+        await loadData();
+        renderCategories();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function showCategoryModal(id = null) {
+      const cat = id ? allCategories.find(c => c.id === id) : null;
+      document.getElementById('modalContainer').innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this)this.remove()">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>${id ? '编辑分类' : '新建分类'}</h3>
+              <button class="modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">名称</label>
+                <input type="text" id="cat-name" value="${cat ? escapeHtml(cat.name) : ''}" placeholder="分类名称"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">标识 (英文)</label>
+                <input type="text" id="cat-slug" value="${cat ? escapeHtml(cat.slug) : ''}" placeholder="如: javascript"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">图标 (FontAwesome class)</label>
+                <input type="text" id="cat-icon" value="${cat ? escapeHtml(cat.icon) : 'fas fa-folder'}" placeholder="fas fa-code"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">描述</label>
+                <input type="text" id="cat-desc" value="${cat ? escapeHtml(cat.description) : ''}" placeholder="分类描述"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+              <div class="form-group">
+                <label style="font-size:.85rem;color:var(--text-muted);display:block;margin-bottom:.4rem;">排序</label>
+                <input type="number" id="cat-sort" value="${cat ? cat.sort_order : 0}" placeholder="0"
+                  style="width:100%;padding:.6rem 1rem;background:var(--bg-dark);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost btn-sm" onclick="this.parentElement.parentElement.parentElement.remove()">取消</button>
+              <button class="btn btn-gold btn-sm" onclick="saveCategory(${id || 'null'})">保存</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function saveCategory(id) {
+      const data = {
+        name: document.getElementById('cat-name').value.trim(),
+        slug: document.getElementById('cat-slug').value.trim(),
+        icon: document.getElementById('cat-icon').value.trim(),
+        description: document.getElementById('cat-desc').value.trim(),
+        sort_order: parseInt(document.getElementById('cat-sort').value) || 0,
+      };
+      if (!data.name || !data.slug) { showToast('名称和标识必填', 'error'); return; }
+
+      try {
+        if (id && id !== 'null') {
+          await API.put(`/admin/categories/${id}`, data);
+        } else {
+          await API.post('/admin/categories', data);
+        }
+        showToast('分类已保存', 'success');
+        document.getElementById('modalContainer').innerHTML = '';
+        await loadData();
+        renderCategories();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function deleteCategory(id, name) {
+      if (!confirm(`确定删除分类「${name}」吗？`)) return;
+      try {
+        await API.del(`/admin/categories/${id}`);
+        showToast('分类已删除', 'success');
+        await loadData();
+        renderCategories();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    /* ===== 用户列表 ===== */
+    function renderUsers() {
+      document.getElementById('adminMain').innerHTML = `
+        <div class="admin-header"><h2>用户列表</h2></div>
+        <table class="admin-table">
+          <thead><tr>
+            <th>ID</th><th>用户名</th><th>邮箱</th><th>角色</th><th>注册时间</th>
+          </tr></thead>
+          <tbody>
+            ${allUsers.map(u => `
+              <tr>
+                <td>${u.id}</td>
+                <td>${escapeHtml(u.username)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td><span class="status-badge ${u.role === 'admin' ? 'status-published' : 'status-draft'}">${u.role === 'admin' ? '管理员' : '用户'}</span></td>
+                <td>${formatDate(u.created_at)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function logout() {
+      API.setToken(null);
+      redirect('/');
+    }
+
+    init();
+  </script>
+</body>
+</html>
