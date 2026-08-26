@@ -59,11 +59,8 @@
   <script>
     initStarfield();
 
-    // 已登录则跳转
-    (async () => {
-      const user = await API.getMe();
-      if (user) redirect('/portal');
-    })();
+    // TODO: 假登录（暂未接入后端）——直接写本地 token 并跳转，不做实际校验
+    if (API.getToken()) redirect('/portal');
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -73,15 +70,10 @@
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
-      try {
-        const data = await API.post('/auth/login', { username, password });
-        API.setToken(data.token);
-        showToast('登录成功，正在进入门户...', 'success');
-        setTimeout(() => redirect('/portal'), 800);
-      } catch (err) {
-        errBox.textContent = err.message;
-        errBox.classList.add('show');
-      }
+      // TODO: 假登录（暂未接入后端）——不调用接口，任意输入直接通过
+      API.setToken('fake-token-for-demo');
+      showToast('登录成功，正在进入门户...', 'success');
+      setTimeout(() => redirect('/portal'), 800);
     });
   </script>
 </body>

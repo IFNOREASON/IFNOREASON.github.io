@@ -3,6 +3,10 @@
 const API = {
   baseURL: '/api',
 
+  // TODO: 假登录开关（暂未接入后端）。置为 false 即恢复真实接口调用
+  MOCK_AUTH: true,
+  mockUser: { username: 'admin', role: 'admin' },
+
   getToken() {
     return localStorage.getItem('token') || '';
   },
@@ -39,6 +43,7 @@ const API = {
 
   async getMe() {
     if (!this.getToken()) return null;
+    if (this.MOCK_AUTH) return this.mockUser; // 假登录：直接返回模拟用户
     try {
       const data = await this.get('/auth/me');
       return data.user;
