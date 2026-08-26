@@ -44,6 +44,31 @@ npm run preview      # 预览构建产物
 
 把页面（如 `xxx.html`）连同其资源放入 `docs/public/`，在 `config.mts` 的 `nav` 中加导航入口即可。功能页面走独立 HTML，不经过 VitePress 渲染，样式完全不受影响。
 
+## 发布到 GitHub Pages
+
+仓库里已配好 **GitHub Actions 自动部署**（`.github/workflows/deploy.yml`），push 到 `main` / `master` 分支即自动构建发布，无需手动上传构建产物。
+
+### 首次启用
+
+1. 把项目推送到 GitHub 仓库（用户页仓库名 `你的用户名.github.io`，或普通项目仓库如 `my-site`）
+2. 打开仓库 **Settings → Pages**，在 **Build and deployment** 的 **Source** 下拉里选 **GitHub Actions**
+3. 回到 **Actions** 页，可手动运行一次 `Deploy VitePress to Pages`，或直接 push 触发
+4. 发布地址：
+   - 用户页：`https://你的用户名.github.io/`
+   - 项目页：`https://你的用户名.github.io/<仓库名>/`
+
+### 子路径（base）说明
+
+- 部署脚本会自动识别仓库形态：用户页用 `base=/`，项目页用 `base=/<仓库名>/`
+- `config.mts` 通过 `BASE_PATH` 环境变量读取，本地开发/预览默认 `base=/`，不受影响
+- **功能页（login / portal / admin 等）内的链接已全部改为相对路径**，在子路径下也能正常跳转；API 请求（`/admin/...`、`/content/...`、`/auth/...`）仍保留根路径，接入真实后端时按后端部署位置调整
+
+### 本地模拟子路径构建（可选）
+
+```bash
+BASE_PATH=/my-site/ pnpm run build   # 产物在 docs/.vitepress/dist，资源引用会带 /my-site/ 前缀
+```
+
 ## 登录说明
 
 当前为**前端假登录**：`docs/public/js/common.js` 中 `MOCK_AUTH: true`，任意账号密码直接进入门户。接入真实后端时改回 `false` 并将 `login.html` 的提交逻辑换回 `API.post('/auth/login', ...)` 即可。

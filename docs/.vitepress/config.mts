@@ -70,6 +70,10 @@ function buildSidebar() {
 
 const sidebar = buildSidebar()
 
+// GitHub Pages 部署路径：CI 通过 BASE_PATH 注入（如 /repo/），本地默认 /
+// 由 .github/workflows/deploy.yml 自动按仓库名计算
+const base = process.env.BASE_PATH || '/'
+
 // 顶部导航：文档分类 + 功能模块入口
 const nav = [
   { text: '首页', link: '/' },
@@ -79,6 +83,7 @@ const nav = [
 ]
 
 export default defineConfig({
+  base,
   lang: 'zh-CN',
   title: '射手座学习导航',
   description: 'Sagittarius Learning Nav · 探索未知的编程星辰大海',

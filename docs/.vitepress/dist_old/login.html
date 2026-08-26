@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 · 射手座学习导航</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♐</text></svg>">
+</head>
+<body>
+  <div class="starfield" id="starfield"></div>
+  <div class="archer-symbol top-left">♐</div>
+
+  <nav class="navbar">
+    <div class="logo" onclick="location.href='/index.html'">
+      <span class="icon">♐</span>
+      <span>Sagittarius Nav</span>
+    </div>
+    <div class="nav-right">
+      <a href="/register.html" class="btn btn-ghost btn-sm">注册</a>
+    </div>
+  </nav>
+
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-icon">♐</div>
+        <h1>欢迎归来，探索者</h1>
+        <p>登录你的账号，继续编程探索之旅</p>
+      </div>
+
+      <div class="auth-error" id="errorBox"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label>用户名或邮箱</label>
+          <input type="text" id="username" placeholder="输入用户名或邮箱" required>
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="password" placeholder="输入密码" required>
+        </div>
+        <button type="submit" class="btn btn-gold" style="width:100%;font-size:1rem;padding:.8rem;">
+          <i class="fas fa-arrow-right-to-bracket"></i> 登录
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        还没有账号？<a href="/register.html">立即注册</a><br>
+        <small style="color:var(--text-dim);margin-top:.5rem;display:inline-block;">
+          演示账号: admin / admin123
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    initStarfield();
+
+    // TODO: 假登录（暂未接入后端）——直接写本地 token 并跳转，不做实际校验
+    if (API.getToken()) redirect('/portal.html.html');
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById('errorBox');
+      errBox.classList.remove('show');
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      // TODO: 假登录（暂未接入后端）——不调用接口，任意输入直接通过
+      API.setToken('fake-token-for-demo');
+      showToast('登录成功，正在进入门户...', 'success');
+      setTimeout(() => redirect('/portal.html.html'), 800);
+    });
+  </script>
+</body>
+</html>
