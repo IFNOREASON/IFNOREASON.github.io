@@ -1,6 +1,15 @@
 node_modules
 docs/.vitepress/dist
+docs/.vitepress/dist_old
+docs/.vitepress/dist_subpath
 docs/.vitepress/cache
+docs/.vitepress/*.timestamp-*.mjs
 .DS_Store
 *.log
 .tooling/
+.trash_cleanup/
+pnpm-lock.yaml
+pnpm-workspace.yaml
+pnpm-workspace.yaml.*
+_tmp_*
+docs/public/__t*
