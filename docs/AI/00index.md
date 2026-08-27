@@ -217,5 +217,3 @@ async def stream_with_status(query: str):
 ---
 
 ## 🎯 下一步
-
-继续学习：[对话交互设计](./02_conversation_design.md)
