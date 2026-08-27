@@ -18,6 +18,7 @@ const GROUP_LABELS = {
   guide: '使用指南',
   frontend: '前端开发',
   backend: '后端开发',
+  AI:"AI开发",
   tools: '开发工具',
 }
 
