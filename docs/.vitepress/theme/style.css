@@ -217,18 +217,21 @@ a { transition: color 0.2s; }
 }
 .VPBackToTop:hover { border-color: var(--primary); }
 
-/* ---- 文档内容排版（对齐原 doc-detail-content 风格） ---- */
+/* ---- 文档内容排版（专业文档密度：正文 14px + 中文优化行高） ---- */
 .vp-doc {
-  font-size: 1rem;
+  font-size: 0.875rem;      /* 16px → 14px，主流中文技术文档标准字号 */
+  line-height: 1.8;         /* 小字号配更松的行高，长文阅读不累 */
+  letter-spacing: 0.01em;   /* 中文微字距，视觉更细腻 */
 }
 .vp-doc h1, .vp-doc h2, .vp-doc h3 {
   font-family: var(--font-display);
   color: var(--star-white);
   border-bottom: 1px solid var(--border);
+  line-height: 1.4;
 }
-.vp-doc h1 { font-size: 1.9rem; }
-.vp-doc h2 { font-size: 1.45rem; padding-bottom: 0.4rem; }
-.vp-doc h3 { font-size: 1.15rem; }
+.vp-doc h1 { font-size: 1.7rem; }
+.vp-doc h2 { font-size: 1.3rem; padding-bottom: 0.4rem; }
+.vp-doc h3 { font-size: 1.05rem; }
 .vp-doc p { color: var(--text); }
 .vp-doc a {
   color: var(--primary-light);
@@ -246,11 +249,13 @@ a { transition: color 0.2s; }
   background: rgba(139, 92, 246, 0.12);
   color: var(--accent-gold);
   border-radius: 4px;
+  font-size: 0.9em;
 }
 .vp-doc div[class*='language-'] {
   background: var(--bg-void);
   border: 1px solid var(--border);
   border-radius: 8px;
+  font-size: 0.9286rem;   /* ≈13px，与 14px 正文形成层级 */
 }
 .vp-doc div[class*='language-'] code { color: var(--text); background: none; }
 .vp-doc table {
@@ -413,6 +418,23 @@ a { transition: color 0.2s; }
   justify-content: center;
   text-align: center;
   padding: 2rem;
+}
+/* 3D 知识宇宙背景：铺满 hero、透明渲染，文字浮于其上 */
+.cosmos-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cosmos-bg canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.guest-hero > :not(.cosmos-bg) {
+  position: relative;
+  z-index: 1;
 }
 .guest-hero .hero-badge {
   font-family: var(--font-display);

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 // 访客首页 · 1:1 复刻原 index.html（射手座深空紫金主题）
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { initStarfield } from '../starfield'
+import { initKnowledgeCosmos, type CosmosHandle } from '../three/knowledge-cosmos'
+
+const cosmosBg = ref<HTMLElement | null>(null)
+let cosmos: CosmosHandle | null = null
 
 // TODO: 假登录（暂未接入后端）——仅本地检查 token，不调用接口
 function fakeGetMe() {
@@ -11,6 +15,13 @@ function fakeGetMe() {
 
 onMounted(() => {
   initStarfield(document.getElementById('starfield'))
+
+  // 3D 知识宇宙：透明背景叠加在 hero 区，失败不阻塞页面
+  if (cosmosBg.value) {
+    initKnowledgeCosmos(cosmosBg.value)
+      .then((h) => { cosmos = h })
+      .catch((e) => console.warn('[cosmos] 3D 场景初始化失败:', e))
+  }
 
   const user = fakeGetMe()
   if (user) {
@@ -29,6 +40,11 @@ onMounted(() => {
       `
     }
   }
+})
+
+onUnmounted(() => {
+  cosmos?.dispose()
+  cosmos = null
 })
 </script>
 
@@ -72,6 +88,8 @@ onMounted(() => {
 
     <!-- 英雄区 -->
     <section class="guest-hero">
+      <!-- 3D 知识宇宙背景（three.js 渲染，透明叠加） -->
+      <div class="cosmos-bg" ref="cosmosBg" aria-hidden="true"></div>
       <div class="hero-badge">♐ SAGITTARIUS · 射手座 · 11.22 - 12.21</div>
       <h1 class="hero-title">探索未知的<br>编程星辰大海</h1>
       <p class="hero-subtitle">自由、冒险、求知若渴 — 射手座的灵魂指引你穿越代码的宇宙。<br>注册登录后，解锁全部学习资源与导航星图。</p>

@@ -2,6 +2,8 @@ node_modules
 docs/.vitepress/dist
 docs/.vitepress/dist_old
 docs/.vitepress/dist_subpath
+docs/.vitepress/dist*
+docs/.vitepress/site*
 docs/.vitepress/cache
 docs/.vitepress/*.timestamp-*.mjs
 .DS_Store
@@ -13,3 +15,6 @@ pnpm-workspace.yaml
 pnpm-workspace.yaml.*
 _tmp_*
 docs/public/__t*
+.edge_tmp/
+_shot_hero.png
+_shot*.png
